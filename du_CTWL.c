@@ -91,7 +91,7 @@ TWN *ctwl_insert_right(CTWL* list, float val){
 }
 
 CTWL *ctwl_create_empty(void){
-	CTWL *empty = malloc(sizeof(CTWL *));
+	CTWL *empty = malloc(sizeof(CTWL));
 
 	if (empty == NULL) return;
 	
