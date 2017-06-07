@@ -8,6 +8,11 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#define CTWL_OK 1
+#define CTWL_FAIL 0
+#define CTWL_FILE_PROBLEM 0
+#define CTWL_FILE_OK 1
+
 
 typedef struct TWN{
 	float data;
@@ -28,7 +33,7 @@ void ctwl_cur_step_left(CTWL *list){
 }
 
 TWN *ctwl_insert_left(CTWL* list, float val){
-	TWN *new_left = malloc(sizeof(TWN *));
+	TWN *new_left = malloc(sizeof(TWN));
 	
 	new_left->data = val;
 	
@@ -57,7 +62,7 @@ TWN *ctwl_insert_left(CTWL* list, float val){
 }
 
 TWN *ctwl_insert_right(CTWL* list, float val){
-	TWN *new_right = malloc(sizeof(TWN *));
+	TWN *new_right = malloc(sizeof(TWN));
 	
 	new_right->data = val;
 	
@@ -95,7 +100,7 @@ CTWL *ctwl_create_empty(void){
 	return empty;
 }
 
-char *ctwl_delete(CTWL* list){
+char ctwl_delete(CTWL* list){
 	TWN *left;
 	TWN *right;
 
@@ -110,17 +115,17 @@ char *ctwl_delete(CTWL* list){
 	
 		list->cur = right;
 	
-		return "CTWL_OK";
+		return CTWL_OK;
 	} else{
 		if (list->cur == NULL){
-        	return "CTWL_FAIL";
+        	return CTWL_FAIL;
 		} 
 		else {
 			free(list->cur);
             
-            list = ctwl_create_empty();
+            list->cur = NULL;
 
-			return "CTWL_OK";
+			return CTWL_OK;
 		}
 	}
 }
@@ -171,29 +176,31 @@ void ctwl_destroy(CTWL* list){
 		
 		ctwl_cur_step_right(list);
 		
-		while (list->cur != start){
+		do {
 			next = list->cur->next;
 			
 			free(list->cur);
 			
 			list->cur = next;
-		}	
+		} while (start != list->cur);
+		
+		free(list->cur);
 	}
 	
 	free(list);
 }
 
-char *ctwl_save(CTWL *list, char *filename){
+char ctwl_save(CTWL *list, char *filename){
 	int file;
 	char text[5] = "CTWL";
 	TWN *start;
 	float x;
 	
-	if (list->cur == NULL) return "CTWL_FILE_PROBLEM";
+	if (list->cur == NULL) return CTWL_FILE_PROBLEM;
 	
 	file = open(filename,O_RDWR|O_CREAT|O_BINARY,S_IWUSR);
 	
-	if (file < 0) return "CTWL_FILE_PROBLEM";	
+	if (file < 0) return CTWL_FILE_PROBLEM;	
 	
 	write(file,&text,sizeof(char[5]));
 	
@@ -208,7 +215,7 @@ char *ctwl_save(CTWL *list, char *filename){
 	
 	close(file);
 	
-	return "CTWL_FILE_OK";
+	return CTWL_FILE_OK;
 }
 
 CTWL *ctwl_load(char *filename){
@@ -216,7 +223,7 @@ CTWL *ctwl_load(char *filename){
 	char text[5];
 	char *output = "CTWL";
 	float x;
-	CTWL *list = malloc(sizeof(CTWL*));
+	CTWL *list;
 	
 	file = open(filename,O_RDONLY|O_BINARY,S_IWUSR);
 	
@@ -250,18 +257,23 @@ CTWL *ctwl_load(char *filename){
 void main(){
 	CTWL *mojList;
 	CTWL *copy;
-	char *save_control;
+	char save_control;
 
 
 	srand((unsigned int) time(NULL));
 
-	mojList = ctwl_create_random(7);
+	mojList = ctwl_create_random(10);
 
 	ctwl_print(mojList);
 
 	save_control = ctwl_save(mojList,"nieco");
 	
-	printf("\n%s\n",save_control);
+	if (save_control == 0){
+		printf("Save failed\n");
+		return;
+	}
+	
+	printf("\n");
 	
 	ctwl_destroy(mojList);
 	
