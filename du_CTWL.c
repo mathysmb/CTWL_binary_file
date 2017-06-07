@@ -8,6 +8,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+
 typedef struct TWN{
 	float data;
 	struct TWN *prev;
@@ -18,27 +19,37 @@ typedef struct{
 	TWN *cur;
 }CTWL;
 
+void ctwl_cur_step_right(CTWL *list){
+	list->cur = list->cur->next;
+}
+
+void ctwl_cur_step_left(CTWL *list){
+	list->cur = list->cur->prev;
+}
+
 TWN *ctwl_insert_left(CTWL* list, float val){
 	TWN *new_left = malloc(sizeof(TWN *));
-	TWN	*left = malloc(sizeof(TWN *));
 	
-	if (list->cur != NULL){
-		new_left->data = val;
+	new_left->data = val;
 	
-		left = list->cur->prev;
-		
-		new_left->prev = left;
-		new_left->next = list->cur;
-		
-		left->next = new_left;	//TU!
-		
-		list->cur->prev = new_left;
-	} else{
-		new_left->data = val;
+	if (list->cur == NULL){
 		new_left->next = new_left;
 		new_left->prev = new_left;
 		
+		list->cur = new_left;
+		
+		return list->cur;
 	}
+	
+	new_left->next = list->cur;
+	new_left->prev = list->cur->prev;	
+	
+	list->cur->prev = new_left;
+	
+	ctwl_cur_step_left(list);
+	ctwl_cur_step_left(list);
+	
+	list->cur->next = new_left;
 	
 	list->cur = new_left;
 
@@ -47,25 +58,28 @@ TWN *ctwl_insert_left(CTWL* list, float val){
 
 TWN *ctwl_insert_right(CTWL* list, float val){
 	TWN *new_right = malloc(sizeof(TWN *));
-	TWN	*right = malloc(sizeof(TWN *));
-
-	if (list->cur != NULL){
-		new_right->data = val;
-
-		right = list->cur->prev;
-
-		new_right->prev = right;
-		new_right->next = list->cur;
-
-		right->next = new_right;
-
-		list->cur->prev = new_right;
-	} else{
-		new_right->data = val;
+	
+	new_right->data = val;
+	
+	if (list->cur == NULL){
 		new_right->next = new_right;
 		new_right->prev = new_right;
+		
+		list->cur = new_right;
+		
+		return list->cur;
 	}
-
+	
+	new_right->prev = list->cur;
+	new_right->next = list->cur->next;	
+	
+	list->cur->next = new_right;
+	
+	ctwl_cur_step_right(list);
+	ctwl_cur_step_right(list);
+	
+	list->cur->prev = new_right;
+	
 	list->cur = new_right;
 
 	return list->cur;
@@ -74,6 +88,8 @@ TWN *ctwl_insert_right(CTWL* list, float val){
 CTWL *ctwl_create_empty(void){
 	CTWL *empty = malloc(sizeof(CTWL *));
 
+	if (empty == NULL) return;
+	
 	empty->cur = NULL;
 
 	return empty;
@@ -109,32 +125,25 @@ char *ctwl_delete(CTWL* list){
 	}
 }
 
-void ctwl_cur_step_right(CTWL *list){
-	list->cur = list->cur->next;
-}
-
-void ctwl_cur_step_left(CTWL *list){
-	list->cur = list->cur->prev;
-}
-
 void ctwl_print(CTWL *list){
 	TWN *start;
 	
-	if (list->cur != NULL){
-		start = list->cur;
-		
-		do {
-			if(start == list->cur) {
-				printf("*");
-			}
-			
-			printf("%f ",list->cur->data);
-	
-			ctwl_cur_step_left(list);
-		} while (start != list->cur);
-	} else {
+	if (list->cur == NULL){
 		printf("List is empty\n");
+		return;
 	}
+		
+	start = list->cur;
+	
+	do {
+		if(start == list->cur) {
+			printf("*");
+		}
+		
+		printf("%f ",list->cur->data);
+
+		ctwl_cur_step_left(list);
+	} while (start != list->cur);
 }
 
 CTWL *ctwl_create_random(unsigned int size){
@@ -225,10 +234,12 @@ CTWL *ctwl_load(char *filename){
 	i = sizeof(char[5]);
 	while (i < file_size) {
 		read(file,&x,sizeof(float));
-
+		
 		ctwl_insert_left(list,x);
+	
 		i += sizeof(float);
 	}	
+	
 	ctwl_cur_step_left(list);
 	close(file);
 	
@@ -244,7 +255,7 @@ void main(){
 
 	srand((unsigned int) time(NULL));
 
-	mojList = ctwl_create_random(10);
+	mojList = ctwl_create_random(7);
 
 	ctwl_print(mojList);
 
@@ -252,7 +263,9 @@ void main(){
 	
 	printf("\n%s\n",save_control);
 	
-	copy = ctwl_load("nieco");
+	ctwl_destroy(mojList);
 	
-	ctwl_print(copy);
+	mojList = ctwl_load("nieco");
+	
+	ctwl_print(mojList);
 }
